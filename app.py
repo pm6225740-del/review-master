@@ -155,25 +155,23 @@ else:
     st.info("위에 고객 리뷰를 입력하고, 말투를 선택한 뒤 **AI 답글 생성하기** 버튼을 눌러보세요.")
 
 # 6. 하단 후원 영역
-st.markdown("---")
+st.divider()
 st.markdown(
     "<div style='text-align:center; margin-top: 0.5rem;'>"
-    "<p style='margin-bottom: 0.6rem; font-weight: 500;'>"
-    "사장님, 이 툴이 도움이 되셨나요? ☕️<br>"
-    "커피 한 잔으로 이 서비스를 응원해 주세요!"
+    "<h4 style='margin-bottom: 0.4rem;'>☕ 사장님, 이 툴이 도움이 되셨나요?</h4>"
+    "<p style='margin-top: 0; margin-bottom: 0.8rem; color: #555;'>"
+    "사장님의 소중한 시간을 아껴드리기 위해 만든 무료 도구입니다.<br>"
+    "커피 한 잔으로 이 프로젝트를 응원해주세요!"
     "</p>"
     "</div>",
     unsafe_allow_html=True,
 )
 
-support_col = st.columns(3)
-with support_col[1]:
-    support_clicked = st.button("☕ 커피 한 잔 응원하기", key="support_button")
-
-if support_clicked:
-    # TODO: 아래 링크를 실제 후원 링크로 교체하세요.
-    support_url = "https://example.com/your-support-link"
-    st.markdown(
-        f"<meta http-equiv='refresh' content='0; url={support_url}'>",
-        unsafe_allow_html=True,
+col_left, col_center, col_right = st.columns([1, 2, 1])
+with col_center:
+    st.link_button(
+        "개발자에게 커피 한 잔 선물하기",
+        "https://ko-fi.com/masterpiece60393",
+        type="primary",
+        use_container_width=True,
     )
