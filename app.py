@@ -4,48 +4,32 @@ from openai import OpenAI
 
 # 1. 페이지 설정 및 디자인
 st.set_page_config(page_title="리뷰 마스터 AI", page_icon="📝")
-st.markdown(
-    """
+# --- 앱 스타일 및 프라이버시 설정 ---
+st.markdown("""
     <style>
-    .main {
-        background-color: #f6f7f9;
+    /* 1. 하단 'Made with Streamlit' 및 헤더(깃허브 링크 등) 숨기기 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* 2. 리뷰 입력창(Textarea) 글씨 색상 및 배경 수정 */
+    textarea {
+        color: #1E1E1E !important; /* 진한 검은색 글씨 */
+        background-color: #FFFFFF !important; /* 하얀색 배경 고정 */
     }
-
-    :root {
-        --point-color: #03C75A;
+    
+    /* 입력창 라벨(제목) 색상 수정 */
+    .stTextArea label p {
+        color: #1E1E1E !important;
+        font-weight: bold;
     }
-
-    .stButton>button {
-        width: 100%;
-        border-radius: 10px;
-        background-color: var(--point-color);
-        color: white;
-        font-weight: 600;
-        border: none;
-        box-shadow: 0 3px 8px rgba(3, 199, 90, 0.35);
-    }
-
-    .stButton>button:hover {
-        background-color: #02b250;
-    }
-
-    .stTextArea textarea {
-        border-radius: 10px;
-        border: 1px solid #dfe3e8;
-        background-color: #ffffff;
-    }
-
-    .result-box {
-        background-color: #e6fff1;
-        border: 1px solid #03C75A;
-        padding: 1.1rem 1rem;
-        border-radius: 12px;
-        margin-top: 0.8rem;
+    
+    /* 3. 전체적인 배경을 깔끔하게 유지 */
+    .stApp {
+        background-color: #F8F9FA;
     }
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
 
 # 2. 사이드바 설정
 with st.sidebar:
