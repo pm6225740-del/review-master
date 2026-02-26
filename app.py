@@ -3,6 +3,7 @@ import yt_dlp
 import os
 import tempfile
 import random
+import requests # API 연동을 위한 라이브러리 추가
 
 # === 1. 페이지 기본 설정 ===
 st.set_page_config(page_title="SNS 미디어 허브", page_icon="🚀", layout="wide", initial_sidebar_state="collapsed")
@@ -41,12 +42,8 @@ st.markdown("""
         margin-bottom: 15px;
         transition: all 0.3s ease;
     }
-    .side-banner:hover {
-        border-color: #8E2DE2;
-        color: white;
-    }
+    .side-banner:hover { border-color: #8E2DE2; color: white; }
     
-    /* 자체 썸네일 카드 디자인 */
     .video-card {
         background-color: #1c1f26;
         border: 1px solid #2d3139;
@@ -58,10 +55,8 @@ st.markdown("""
         gap: 20px;
         transition: 0.3s;
     }
-    .video-card:hover {
-        border-color: #8E2DE2;
-        background-color: #242833;
-    }
+    .video-card:hover { border-color: #8E2DE2; background-color: #242833; }
+    
     .thumb-box {
         width: 160px;
         height: 90px;
@@ -71,27 +66,18 @@ st.markdown("""
         justify-content: center;
         align-items: center;
         font-size: 2rem;
-        position: relative;
     }
     .x-bg { background: linear-gradient(45deg, #000000, #333333); }
     .ig-bg { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-    .play-btn {
-        color: white;
-        opacity: 0.8;
-    }
+    .play-btn { color: white; opacity: 0.8; }
+    
     .card-info h4 { margin: 0 0 10px 0; color: #fff; }
     .card-info p { margin: 0; color: #888; font-size: 0.9rem; }
-    .copy-link {
-        color: #8E2DE2;
-        text-decoration: none;
-        font-weight: bold;
-        margin-top: 10px;
-        display: inline-block;
-    }
+    .copy-link { color: #8E2DE2; text-decoration: none; font-weight: bold; margin-top: 10px; display: inline-block; }
     </style>
 """, unsafe_allow_html=True)
 
-# === 3. 백엔드 로직 ===
+# === 3. 백엔드 다운로드 로직 ===
 def download_video(url):
     ydl_opts = {
         'format': 'best',
@@ -102,30 +88,58 @@ def download_video(url):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
-            return file_path, info.get('title', 'video')
+            return ydl.prepare_filename(info), info.get('title', 'video')
     except Exception as e:
         return None, str(e)
 
-@st.cache_data
-def generate_50_trends():
+# === 4. 실시간 API 연동 뼈대 (및 동적 시뮬레이션) ===
+def fetch_real_time_trends():
+    """
+    실제 API 키를 발급받으면 작동할 로직입니다.
+    현재는 접속할 때마다 순위와 데이터가 섞이는 '실시간 시뮬레이션'으로 작동합니다.
+    """
+    # 💡 나중에 가입 후 여기에 API 키를 넣으면 진짜 연동이 시작됩니다.
+    RAPID_API_KEY = "" 
+    
+    if RAPID_API_KEY:
+        # 실제 API 통신 로직 (추후 활성화)
+        url = "https://twitter-trends.p.rapidapi.com/trends"
+        headers = {"X-RapidAPI-Key": RAPID_API_KEY}
+        # response = requests.get(url, headers=headers)
+        # return response.json()
+        pass 
+
+    # --- API 키가 없을 때의 동적 데이터 (새로고침 시마다 변동) ---
     trends = []
-    # 데모용 원본 링크 (접속 가능한 링크 예시)
-    sample_x_url = "https://x.com/elonmusk/status/1769498263723327668"
-    sample_ig_url = "https://www.instagram.com/instagram/"
+    
+    # 실제 접속 가능한 다양한 샘플 URL 풀
+    x_urls = [
+        "https://x.com/elonmusk/status/1769498263723327668",
+        "https://x.com/SpaceX/status/1768270609355473138",
+        "https://x.com/NASA/status/1768310000000000000"
+    ]
+    ig_urls = [
+        "https://www.instagram.com/instagram/",
+        "https://www.instagram.com/natgeo/",
+        "https://www.instagram.com/nike/"
+    ]
+    
+    keywords = ["핫플", "강아지", "고양이", "다이어트 레시피", "직캠", "속보", "유머", "챌린지", "운동 루틴", "브이로그"]
     
     for i in range(1, 51):
-        platform = "X (Twitter)" if i % 2 == 0 else "Instagram"
+        platform = random.choice(["X (Twitter)", "Instagram"])
+        url = random.choice(x_urls) if platform == "X (Twitter)" else random.choice(ig_urls)
+        
         trends.append({
             "rank": i,
             "platform": platform,
-            "title": f"실시간 화제의 급상승 영상 {i}탄",
-            "count": f"{random.randint(50, 999) / 10.0:.1f}k",
-            "url": sample_x_url if platform == "X (Twitter)" else sample_ig_url
+            "title": f"실시간 화제의 {random.choice(keywords)} 영상",
+            "count": f"{random.randint(100, 9999) / 10.0:.1f}k",
+            "url": url
         })
     return trends
 
-# === 4. UI 구성 ===
+# === 5. UI 구성 ===
 left_ad, main_content, right_ad = st.columns([1.5, 7, 1.5])
 
 with left_ad:
@@ -160,36 +174,21 @@ with main_content:
 
     with tab_rank:
         st.write("")
-        selected_platform = st.radio("보기 옵션 선택:", ["🔥 전체보기", "🐦 X (Twitter)", "📸 Instagram"], horizontal=True)
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            selected_platform = st.radio("보기 옵션 선택:", ["🔥 전체보기", "🐦 X (Twitter)", "📸 Instagram"], horizontal=True)
+        with col2:
+            # 새로고침 버튼을 만들어 실시간으로 데이터가 변하는 것을 시각적으로 보여줌
+            if st.button("🔄 실시간 데이터 갱신"):
+                st.rerun()
+
         st.markdown("---")
         
-        all_trends = generate_50_trends()
+        # 실시간 데이터 가져오기 (API 키가 없으면 시뮬레이션 데이터가 랜덤하게 섞여 나옵니다)
+        all_trends = fetch_real_time_trends()
         
         if selected_platform == "🐦 X (Twitter)":
             filtered_trends = [t for t in all_trends if t["platform"] == "X (Twitter)"]
         elif selected_platform == "📸 Instagram":
             filtered_trends = [t for t in all_trends if t["platform"] == "Instagram"]
         else:
-            filtered_trends = all_trends
-
-        # 리스트 나열형 (스크롤 박스 안에 50개 배치)
-        with st.container(height=800):
-            for t in filtered_trends:
-                bg_class = "x-bg" if t['platform'] == "X (Twitter)" else "ig-bg"
-                icon = "🐦" if t['platform'] == "X (Twitter)" else "📸"
-                
-                st.markdown(f"""
-                <div class="video-card">
-                    <div class="thumb-box {bg_class}">
-                        <div class="play-btn">▶</div>
-                    </div>
-                    <div class="card-info">
-                        <h4>🏅 {t['rank']}위 | {t['title']}</h4>
-                        <p>{icon} 플랫폼: {t['platform']} &nbsp;|&nbsp; 📈 조회수: {t['count']}</p>
-                        <a href="{t['url']}" target="_blank" class="copy-link">🔗 원본 영상 보러가기</a>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-st.markdown("<br><hr style='border-color: #2d3139;'>", unsafe_allow_html=True)
-st.caption("<div style='text-align:center; color:#666;'>© 2026 SNS Media Hub. All rights reserved. | 이용약관 | DMCA</div>", unsafe_allow_html=True)
