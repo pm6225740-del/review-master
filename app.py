@@ -1,31 +1,25 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import yt_dlp
 import os
 import tempfile
 import random
 
 # === 1. 페이지 기본 설정 ===
-# 초기 로딩 시 우측 상단 메뉴바를 최소화하기 위해 initial_sidebar_state="collapsed" 적용
 st.set_page_config(page_title="SNS 미디어 허브", page_icon="🚀", layout="wide", initial_sidebar_state="collapsed")
 
 # === 2. 고급 CSS 디자인 커스텀 ===
-# 우측 상단 쓸모없는 툴바 제거 및 전체적인 가독성/디자인 업그레이드
 st.markdown("""
     <style>
-    /* Streamlit 기본 메뉴 숨기기 */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     .stDeployButton {display:none;}
 
-    /* 폰트 및 배경 설정 */
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    html, body, [class*="css"] {
-        font-family: 'Pretendard', sans-serif;
-    }
+    html, body, [class*="css"] { font-family: 'Pretendard', sans-serif; }
     .main { background-color: #0b0e14; }
     
-    /* 세련된 광고/공지 배너 (그라데이션 효과) */
     .premium-banner {
         background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
         border-radius: 12px;
@@ -36,10 +30,8 @@ st.markdown("""
         font-size: 1.1rem;
         margin-bottom: 25px;
         box-shadow: 0 4px 15px rgba(142, 45, 226, 0.3);
-        letter-spacing: 0.5px;
     }
     
-    /* 사이드 배너 (스토어 홍보용 등) */
     .side-banner {
         background: #1a1d24;
         border: 1px solid #2d3139;
@@ -56,24 +48,37 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    /* 탭 디자인 강조 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 20px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 4px 4px 0px 0px;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        font-size: 1.1rem;
-        font-weight: 600;
+    /* 랭킹 카드 디자인 */
+    .ranking-card {
+        background-color: #161922;
+        border-left: 4px solid #8E2DE2;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# === 3. 백엔드 로직 ===
+# === 3. 영상 임베드 함수 (실제 SNS 게시물 노출용) ===
+# 트위터(X) 게시물을 웹사이트에 진짜로 띄워주는 기능입니다.
+def embed_x_tweet(tweet_url):
+    html_code = f"""
+    <blockquote class="twitter-tweet" data-theme="dark">
+    <a href="{tweet_url}"></a>
+    </blockquote>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    """
+    components.html(html_code, height=450, scrolling=True)
+
+# 인스타그램 게시물을 웹사이트에 띄워주는 기능입니다.
+def embed_instagram(post_url):
+    html_code = f"""
+    <blockquote class="instagram-media" data-instgrm-permalink="{post_url}?utm_source=ig_embed" data-instgrm-version="14"></blockquote>
+    <script async src="//www.instagram.com/embed.js"></script>
+    """
+    components.html(html_code, height=500, scrolling=True)
+
+# === 4. 백엔드 로직 ===
 def download_video(url):
     ydl_opts = {
         'format': 'best',
@@ -89,30 +94,32 @@ def download_video(url):
     except Exception as e:
         return None, str(e)
 
-# 50개 더미 랭킹 데이터 생성 함수
+# 50개 랭킹 데이터 생성 함수
 @st.cache_data
 def generate_50_trends():
-    platforms = ["Instagram", "X (Twitter)"]
-    keywords = ["핫플", "강아지", "고양이", "다이어트 레시피", "직캠", "속보", "유머", "챌린지", "운동 루틴", "브이로그", "O.OPICS 폰케이스 리뷰"]
     trends = []
+    # 데모를 위해 실제 존재하는 안전한 트윗/인스타 URL 구조를 사용합니다.
+    # 추후 API를 연결하면 이 URL들이 실시간으로 교체됩니다.
+    sample_x_url = "https://twitter.com/X/status/1801041697268801758"
+    sample_ig_url = "https://www.instagram.com/p/C-vT-0_h"
     
     for i in range(1, 51):
+        platform = "X (Twitter)" if i % 2 == 0 else "Instagram"
         trends.append({
             "rank": i,
-            "platform": random.choice(platforms),
-            "title": f"실시간 화제의 {random.choice(keywords)} 영상",
-            "count": f"{random.randint(10, 999) / 10.0:.1f}k",
-            # 플레이 테스트용 무료 공개 샘플 영상 URL
-            "video_url": "https://www.w3schools.com/html/mov_bbb.mp4" 
+            "platform": platform,
+            "title": f"실시간 화제의 급상승 영상 {i}탄",
+            "count": f"{random.randint(50, 999) / 10.0:.1f}k",
+            "url": sample_x_url if platform == "X (Twitter)" else sample_ig_url
         })
     return trends
 
-# === 4. 레이아웃 및 UI 구성 ===
+# === 5. 레이아웃 및 UI 구성 ===
 left_ad, main_content, right_ad = st.columns([1.5, 7, 1.5])
 
-# [좌측 광고]
+# [좌측 광고] - 요청하신 대로 '광고문의'로 변경
 with left_ad:
-    st.markdown('<div class="side-banner">✨<br><br><b>O.OPICS</b><br>트렌디한 폰 액세서리<br>구경하기</div>', unsafe_allow_html=True)
+    st.markdown('<div class="side-banner">📢<br><br><b>광고문의</b><br>배너 등록<br>문의하기</div>', unsafe_allow_html=True)
     st.markdown('<div class="side-banner">🎯<br><br>스폰서 배너<br>영역</div>', unsafe_allow_html=True)
 
 # [우측 광고]
@@ -124,8 +131,7 @@ with right_ad:
 with main_content:
     st.markdown('<div class="premium-banner">🚀 고화질 SNS 영상 다운로더 & 실시간 트렌드 분석 허브</div>', unsafe_allow_html=True)
     
-    # 탭 구성
-    tab_dl, tab_rank = st.tabs(["📥 초고속 다운로드", "🔥 실시간 TOP 50 랭킹 영상보기"])
+    tab_dl, tab_rank = st.tabs(["📥 초고속 다운로드", "🔥 실시간 인기 영상 리스트"])
     
     # --- 탭 1: 다운로드 ---
     with tab_dl:
@@ -137,49 +143,54 @@ with main_content:
         
         if st.button("지금 추출하기", type="primary", use_container_width=True):
             if url_input:
-                with st.spinner('서버에서 고화질 영상을 가져오고 있습니다. 잠시만 대기해주세요...'):
+                with st.spinner('서버에서 고화질 영상을 가져오고 있습니다...'):
                     file_path, title_or_error = download_video(url_input)
-                    
                     if file_path and os.path.exists(file_path):
-                        st.success(f"🎉 성공적으로 추출했습니다! ({title_or_error[:20]}...)")
+                        st.success("🎉 성공적으로 추출했습니다!")
                         with open(file_path, "rb") as f:
-                            st.download_button(
-                                label="💾 내 기기에 저장하기",
-                                data=f,
-                                file_name=os.path.basename(file_path),
-                                mime="video/mp4",
-                                use_container_width=True
-                            )
+                            st.download_button("💾 내 기기에 저장하기", data=f, file_name=os.path.basename(file_path), mime="video/mp4", use_container_width=True)
                     else:
-                        st.error(f"❌ 다운로드에 실패했습니다. 링크를 다시 확인해주세요.\n(상세 오류: {title_or_error})")
+                        st.error(f"❌ 다운로드에 실패했습니다. (상세 오류: {title_or_error})")
             else:
                 st.warning("먼저 링크를 입력해주세요.")
 
-    # --- 탭 2: 실시간 랭킹 (영상 바로보기 추가) ---
+    # --- 탭 2: 실시간 랭킹 (필터 및 리스트형 뷰) ---
     with tab_rank:
-        st.markdown("💡 **목록을 클릭하면 영상을 바로 시청**할 수 있습니다. (현재는 샘플 영상이 재생됩니다.)")
+        st.write("")
+        # 상단 플랫폼 선택 필터 추가
+        selected_platform = st.radio("보기 옵션 선택:", ["🔥 전체보기", "🐦 X (Twitter)", "📸 Instagram"], horizontal=True)
+        st.markdown("---")
         
-        trends_data = generate_50_trends()
+        all_trends = generate_50_trends()
         
-        for t in trends_data:
-            # expander를 사용해 클릭 시 영상이 펼쳐지도록 구현
-            expander_title = f"🏅 {t['rank']}위 | [{t['platform']}] {t['title']} | 📈 {t['count']}회 시청"
-            with st.expander(expander_title):
-                # 1. 영상 플레이어 표시
-                st.video(t['video_url'])
+        # 필터링 로직
+        if selected_platform == "🐦 X (Twitter)":
+            filtered_trends = [t for t in all_trends if t["platform"] == "X (Twitter)"]
+        elif selected_platform == "📸 Instagram":
+            filtered_trends = [t for t in all_trends if t["platform"] == "Instagram"]
+        else:
+            filtered_trends = all_trends
+
+        # 50개의 영상이 브라우저를 느리게 하는 것을 방지하기 위해 스크롤 컨테이너 사용
+        with st.container(height=800):
+            for t in filtered_trends:
+                # 텍스트 정보
+                st.markdown(f"""
+                <div class="ranking-card">
+                    <h4 style="margin:0; color:#fff;">🏅 {t['rank']}위 | {t['title']}</h4>
+                    <p style="margin:5px 0 0 0; color:#aaa; font-size:0.9em;">
+                        플랫폼: {t['platform']} | 📈 조회수: {t['count']}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                # 2. 개별 영상 다운로드 버튼 (샘플)
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.caption(f"이 영상은 {t['platform']}에서 현재 가장 핫한 트렌드입니다.")
-                with col2:
-                    st.download_button(
-                        label="이 영상 다운로드",
-                        data=b"dummy video data", # 실제 서비스 시 이 부분을 추출된 파일로 변경
-                        file_name=f"trend_video_{t['rank']}.mp4",
-                        key=f"dl_btn_{t['rank']}",
-                        use_container_width=True
-                    )
+                # 실제 영상 임베드 노출
+                if t['platform'] == "X (Twitter)":
+                    embed_x_tweet(t['url'])
+                else:
+                    embed_instagram(t['url'])
+                
+                st.markdown("<br>", unsafe_allow_html=True)
 
 # --- 푸터 ---
 st.markdown("<br><hr style='border-color: #2d3139;'>", unsafe_allow_html=True)
